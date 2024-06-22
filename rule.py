@@ -7,6 +7,9 @@ class Rule():
             raise TypeError('Both left-hand side and right-hand side should be an instance of Multiset!')
         if (type(priority != float)):
             raise TypeError('Priority should be defined as a decimal number!')
+        if (type(dest) != str):
+            raise TypeError('Destination should be a string!')
+        
         self.lhs = lhs 
         self.rhs = rhs
         self.destination = dest
