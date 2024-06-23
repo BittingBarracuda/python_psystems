@@ -118,11 +118,12 @@ class Membrane():
         
         self.__dump_buffers()
         self.steps_computed += 1
-        print(f'[!] Contents of membrane {self.id} at step {self.steps_computed}: {self.multiset}')
+        # print(f'[!] Contents of membrane {self.id} at step {self.steps_computed}: {self.multiset.multiset}')
         
         keep_comp = False
         for membrane in self.membranes:
-            keep_comp = keep_comp or membrane.compute_step()
+            aux = membrane.compute_step()
+            keep_comp = keep_comp or aux
         
         keep_comp = keep_comp or (len(self.multiset) != 0)
         return keep_comp
@@ -135,6 +136,12 @@ class Membrane():
             return 0
         else:
             return max([mem.depth() for mem in self.membranes]) + 1
+    
+    def get_all_membranes(self):
+        ret = [self]
+        for membrane in self.membranes:
+            ret.extend(membrane.get_all_membranes())
+        return ret
     
     def run(self, num_steps=1_00):
         for i in range(num_steps):
