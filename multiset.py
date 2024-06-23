@@ -37,7 +37,8 @@ class Multiset():
     def contains(self, other):
         if type(other) != Multiset:
             raise TypeError('Contains operation can only be applied between Multisets!')
-        keys = self.__get_all_keys(other)
+        # keys = self.__get_all_keys(other)
+        keys = list(other.multiset.keys())
         return all([other.multiset.get(key, 0) <= self.multiset.get(key, 0) for key in keys])
         
     def __add__(self, other):
