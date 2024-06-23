@@ -1,8 +1,12 @@
+from datetime import datetime
 from multiset import Multiset
 from rule import Rule
 from random import choice
 
 import constants as c
+
+def get_datetime():
+    return datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
 class Membrane():
     def __init__(self, id, parent=None, mult_content=Multiset(''), mem_content=[], rules=[]):
@@ -29,10 +33,12 @@ class Membrane():
         self.priority_blocks = aux_dict
 
         self.id = id
-        self.membranes_ids = {mem.id : mem for mem in self.membranes}
-        aux = list(self.membranes_ids.keys()) + [self.id]
-        if len(aux) != len(set(aux)):
-            raise ValueError('Membrane IDs should be unique! Repeated IDs found...')
+        self.membranes_ids = {}
+        for membrane in self.membranes:
+            self.membranes_ids[membrane.id] = self.membranes_ids.get(membrane.id) + [membrane.id]
+        # aux = list(self.membranes_ids.keys()) + [self.id]
+        # if len(aux) != len(set(aux)):
+        #     raise ValueError('Membrane IDs should be unique! Repeated IDs found...')
         self.steps_computed = 0
     
 
@@ -40,7 +46,33 @@ class Membrane():
         if (parent != None) and (type(parent) != Membrane):
             raise TypeError('Parent membrane should be None or instance of Membrane!')
         self.parent = parent
-
+    
+    def set_membranes(self, membranes):
+        if any([type(x) != Membrane for x in membranes]):
+            raise TypeError('All elements should be instances of Membrane!')
+        self.membranes = membranes
+        self.membranes_ids = {}
+        for membrane in self.membranes:
+            self.membranes_ids[membrane.id] = self.membranes_ids.get(membrane.id, []) + [membrane]
+    
+    def set_multiset(self, multiset):
+        if type(multiset) != Multiset:
+            raise TypeError('Contents of membrane should be instance of Multiset!')
+        self.multiset = multiset
+    
+    def set_rules(self, rules):
+        if type(rules) != dict:
+            raise TypeError('')
+        
+        try:
+            current_rules = rules[self.id]
+            self.rules = current_rules
+        except KeyError:
+            pass
+        
+        for _, mems in self.membranes_ids.items():
+            for mem in mems:
+                mem.set_rules(rules)
     
     def __get_applicable_rules(self):
         step_1 = [rule for rule in self.rules if self.multiset.contains(rule.lhs)]
@@ -86,7 +118,7 @@ class Membrane():
         
         self.__dump_buffers()
         self.steps_computed += 1
-        print(f'Contents of membrane {self.id} at step {self.steps_computed}: {self.multiset}')
+        print(f'[!] Contents of membrane {self.id} at step {self.steps_computed}: {self.multiset}')
         
         keep_comp = False
         for membrane in self.membranes:
@@ -106,6 +138,6 @@ class Membrane():
     
     def run(self, num_steps=1_00):
         for i in range(num_steps):
-            print(f'\nComputing step {i+1}...')
+            print(f'\n[{get_datetime()}] Computing step {i+1}...')
             if not self.compute_step():
                 break

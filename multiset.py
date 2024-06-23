@@ -18,6 +18,9 @@ class Multiset():
                     to_del.append(key)
             for key in to_del:
                 del self.multiset[key]  
+        elif type(input) == list:
+            for key, mult in input:
+                self.multiset[key] = self.multiset.get(key, 0) + mult
     
     def support(self):
         return self.multiset.keys()  
