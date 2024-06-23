@@ -5,9 +5,9 @@ from random import choice
 import constants as c
 
 class Membrane():
-    def __init__(self, id, parent=None, mult_content=[], mem_content=[], rules=[]):
-        if any([type(mult) != Multiset for mult in mult_content]):
-            raise TypeError('Membrane contents should be instances of Multiset!')
+    def __init__(self, id, parent=None, mult_content=Multiset(''), mem_content=[], rules=[]):
+        if type(mult_content) != Multiset:
+            raise TypeError('Membrane contents should be instance of Multiset!')
         if any([type(mem) != Membrane for mem in mem_content]):
             raise TypeError('Membrane inner membranes should be instances of Membrane!')
         if any([type(rule) != Rule for rule in rules]):
@@ -15,20 +15,31 @@ class Membrane():
         if (parent != None) and (type(parent) != Membrane):
             raise TypeError('Parent membrane should be None or instance of Membrane!')
         
-        self.multiset = sum(mult_content)
+        self.multiset = mult_content
         self.parent = parent
         self.membranes = mem_content
         self.rules = sorted(rules, key=lambda x: x.priority, reverse=True)
         self.new_multiset = Multiset('')
         self.new_membranes = Multiset('')
-        self.id = id
-        self.membranes_ids = {mem.id : mem for mem in self.membranes}
         
         aux = set([rule.priority for rule in self.rules])
         aux_dict = {}
         for priority in aux:
             aux_dict[priority] = [rule for rule in self.rules if rule.priority == priority]
         self.priority_blocks = aux_dict
+
+        self.id = id
+        self.membranes_ids = {mem.id : mem for mem in self.membranes}
+        aux = list(self.membranes_ids.keys()) + [self.id]
+        if len(aux) != len(set(aux)):
+            raise ValueError('Membrane IDs should be unique! Repeated IDs found...')
+        self.steps_computed = 0
+    
+
+    def set_parent(self, parent):
+        if (parent != None) and (type(parent) != Membrane):
+            raise TypeError('Parent membrane should be None or instance of Membrane!')
+        self.parent = parent
 
     
     def __get_applicable_rules(self):
@@ -42,19 +53,19 @@ class Membrane():
     def __get_priority_blocks(self, applicable_rules=[]):
         ret = {}
         for rule in applicable_rules:
-            ret[rule.priority] = ret.get(rule.priority, []).extend(rule)
+            ret[rule.priority] = ret.get(rule.priority, []) + [rule]
         return ret
     
     def __apply_rule(self, rule):
         if rule.destination == c.DEST_HERE:
             self.new_multiset = (self.multiset - rule.lhs) + rule.rhs
+            # self.new_multiset = self.multiset + rule.rhs
         elif rule.destination == c.DEST_OUT:
             self.new_multiset = self.multiset - rule.lhs
             if self.parent != None:
                 self.parent.new_multiset = self.parent.multiset + rule.rhs
-        elif rule.destination == c.DEST_IN:
-            dest = rule.destination[rule.destination.rindex('-')+1:]
-            dest_mem = self.membranes_ids.get(dest, None)
+        else:
+            dest_mem = self.membranes_ids.get(rule.destination, None)
             if dest_mem != None:
                 self.new_multiset = self.multiset - rule.lhs
                 dest_mem.new_multiset = dest_mem.multiset + rule.rhs
@@ -63,24 +74,26 @@ class Membrane():
         self.multiset = self.new_multiset
         self.new_multiset = Multiset('')
     
-    def compute_step(self, compute_inner=True):
+    def compute_step(self):
         rules = self.__get_applicable_rules()
         rule_blocks = self.__get_priority_blocks(rules)
-        rule_blocks = [rule_blocks[prior] for prior in sorted(rule_blocks.keys(), reverse=True)]
+        rule_blocks = [rule_blocks[prior] for prior in sorted(list(rule_blocks.keys()), reverse=True)]
         
         for rule_block in rule_blocks:
             rule_to_apply = choice(rule_block)
             if self.__is_applicable(rule_to_apply):
                 self.__apply_rule(rule_to_apply)
         
-        if compute_inner:
-            for membrane in self.membranes:
-                membrane.compute_step(compute_inner=True)
-
         self.__dump_buffers()
-        if compute_inner:
-            for membrane in self.membranes:
-                membrane.__dump_buffers()
+        self.steps_computed += 1
+        print(f'Contents of membrane {self.id} at step {self.steps_computed}: {self.multiset}')
+        
+        keep_comp = False
+        for membrane in self.membranes:
+            keep_comp = keep_comp or membrane.compute_step()
+        
+        keep_comp = keep_comp or (len(self.multiset) != 0)
+        return keep_comp
     
     def degree(self):
         return len(self.membranes)
@@ -90,4 +103,9 @@ class Membrane():
             return 0
         else:
             return max([mem.depth() for mem in self.membranes]) + 1
-        
+    
+    def run(self, num_steps=1_00):
+        for i in range(num_steps):
+            print(f'\nComputing step {i+1}...')
+            if not self.compute_step():
+                break
