@@ -1,3 +1,5 @@
+import numpy as np
+
 class Multiset():
     def __init__(self, input) -> None:
         self.multiset = {}
@@ -79,6 +81,34 @@ class Multiset():
     
     def __repr__(self):
         return self.__str__()
+
+
+class MultisetNp():
+    def __init__(self, input=[], alphabet=[], np_arr=[]):
+        if np_arr != []:
+            self.arr = np_arr
+        else:
+            n = len(alphabet)
+            self.arr = np.zeros(shape=(n, ), dtype=int)
+            for key, value in input:
+                index = alphabet.index(key)
+                self.arr[index] = value
+        self.alphabet = alphabet
+    
+    def contains(self, other):
+        aux = self.arr - other.arr
+        return np.all(aux >= 0)
+
+    def __add__(self, other):
+        aux = self.arr + other.arr
+        return MultisetNp(np_arr=aux) 
+    
+    def __sub__(self, other):
+        aux = self.arr - other.arr
+        aux[aux < 0] = 0
+        return MultisetNp(np_arr=aux)
+    
+    
 
                
 
