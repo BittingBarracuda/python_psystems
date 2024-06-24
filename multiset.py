@@ -1,4 +1,5 @@
 import numpy as np
+import scipy as sp
 
 class Multiset():
     def __init__(self, input) -> None:
@@ -84,20 +85,21 @@ class Multiset():
 
 
 class MultisetNp():
-    def __init__(self, input=[], alphabet=[], np_arr=[]):
-        if np_arr != []:
+    def __init__(self, input=[], alphabet=[], np_arr=np.array([])):
+        if np_arr.size != 0:
             self.arr = np_arr
         else:
             n = len(alphabet)
-            self.arr = np.zeros(shape=(n, ), dtype=int)
+            self.arr = np.zeros(shape=(1, n), dtype=int)
             for key, value in input:
                 index = alphabet.index(key)
-                self.arr[index] = value
-        self.alphabet = alphabet
+                self.arr[0][index] = value
+            self.arr = sp.sparse.csr_array(self.arr)
+        # self.alphabet = alphabet
     
     def contains(self, other):
         aux = self.arr - other.arr
-        return np.all(aux >= 0)
+        return aux[aux < 0].size == 0
 
     def __add__(self, other):
         aux = self.arr + other.arr
@@ -108,8 +110,5 @@ class MultisetNp():
         aux[aux < 0] = 0
         return MultisetNp(np_arr=aux)
     
-    
-
-               
-
-    
+    def __len__(self):
+        return self.arr[self.arr > 0].size
