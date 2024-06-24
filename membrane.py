@@ -1,5 +1,5 @@
 from datetime import datetime
-from multiset import Multiset
+from multiset import Multiset, MultisetNp
 from rule import Rule
 from random import choice
 
@@ -9,9 +9,9 @@ def get_datetime():
     return datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
 class Membrane():
-    def __init__(self, id, parent=None, mult_content=Multiset(''), mem_content=[], rules=[]):
-        if type(mult_content) != Multiset:
-            raise TypeError('Membrane contents should be instance of Multiset!')
+    def __init__(self, id, parent=None, mult_content=Multiset(''), mem_content=[], rules=[], alphabet=[]):
+        if (type(mult_content) != Multiset) and (type(mult_content) != MultisetNp):
+            raise TypeError('Membrane contents should be instance of Multiset or MultisetNp!')
         if any([type(mem) != Membrane for mem in mem_content]):
             raise TypeError('Membrane inner membranes should be instances of Membrane!')
         if any([type(rule) != Rule for rule in rules]):
@@ -23,25 +23,16 @@ class Membrane():
         self.parent = parent
         self.membranes = mem_content
         self.rules = sorted(rules, key=lambda x: x.priority, reverse=True)
+
         self.new_multiset = Multiset('')
         self.new_membranes = Multiset('')
-        
-        aux = set([rule.priority for rule in self.rules])
-        aux_dict = {}
-        for priority in aux:
-            aux_dict[priority] = [rule for rule in self.rules if rule.priority == priority]
-        self.priority_blocks = aux_dict
 
         self.id = id
         self.membranes_ids = {}
         for membrane in self.membranes:
-            self.membranes_ids[membrane.id] = self.membranes_ids.get(membrane.id) + [membrane.id]
-        # aux = list(self.membranes_ids.keys()) + [self.id]
-        # if len(aux) != len(set(aux)):
-        #     raise ValueError('Membrane IDs should be unique! Repeated IDs found...')
+            self.membranes_ids[membrane.id] = self.membranes_ids.get(membrane.id, []) + [membrane]
         self.steps_computed = 0
     
-
     def set_parent(self, parent):
         if (parent != None) and (type(parent) != Membrane):
             raise TypeError('Parent membrane should be None or instance of Membrane!')
@@ -56,8 +47,8 @@ class Membrane():
             self.membranes_ids[membrane.id] = self.membranes_ids.get(membrane.id, []) + [membrane]
     
     def set_multiset(self, multiset):
-        if type(multiset) != Multiset:
-            raise TypeError('Contents of membrane should be instance of Multiset!')
+        if (type(multiset) != Multiset) and (type(multiset) != MultisetNp):
+            raise TypeError('Contents of membrane should be instance of Multiset or MultisetNp!')
         self.multiset = multiset
     
     def set_rules(self, rules):
