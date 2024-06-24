@@ -1,10 +1,10 @@
-from multiset import Multiset
+from multiset import Multiset, MultisetNp
 from constants import DESTS
 
 class Rule():
     def __init__(self, lhs, rhs, dest='here', priority=1.0):
-        if (type(lhs) != Multiset) or (type(rhs) != Multiset):
-            raise TypeError('Both left-hand side and right-hand side should be an instance of Multiset!')
+        if not (((type(lhs) == Multiset) and (type(rhs) == Multiset)) or ((type(lhs) == MultisetNp) and (type(rhs) == MultisetNp))):
+            raise TypeError('Both left-hand side and right-hand side should be an instance of Multiset or MultisetNp!')
         if (type(priority) != float):
             raise TypeError('Priority should be defined as a decimal number!')
         if (type(dest) != str):
