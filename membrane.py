@@ -1,17 +1,19 @@
+from multiprocessing import Process, cpu_count, Lock, current_process, Barrier, Value
 from datetime import datetime
-from multiset import Multiset, MultisetNp
+from multiset import Multiset
 from rule import Rule
 from random import choice
 
 import constants as c
+import time
 
 def get_datetime():
     return datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
 class Membrane():
     def __init__(self, id, parent=None, mult_content=Multiset(''), mem_content=[], rules=[], alphabet=[]):
-        if (type(mult_content) != Multiset) and (type(mult_content) != MultisetNp):
-            raise TypeError('Membrane contents should be instance of Multiset or MultisetNp!')
+        if (type(mult_content) != Multiset):
+            raise TypeError('Membrane contents should be instance of Multiset!')
         if any([type(mem) != Membrane for mem in mem_content]):
             raise TypeError('Membrane inner membranes should be instances of Membrane!')
         if any([type(rule) != Rule for rule in rules]):
@@ -47,8 +49,8 @@ class Membrane():
             self.membranes_ids[membrane.id] = self.membranes_ids.get(membrane.id, []) + [membrane]
     
     def set_multiset(self, multiset):
-        if (type(multiset) != Multiset) and (type(multiset) != MultisetNp):
-            raise TypeError('Contents of membrane should be instance of Multiset or MultisetNp!')
+        if (type(multiset) != Multiset):
+            raise TypeError('Contents of membrane should be instance of Multiset')
         self.multiset = multiset
     
     def set_rules(self, rules):
@@ -109,7 +111,7 @@ class Membrane():
         
         self.__dump_buffers()
         self.steps_computed += 1
-        # print(f'[!] Contents of membrane {self.id} at step {self.steps_computed}: {self.multiset.multiset}')
+        # print(f'[!] Contents of membrane {self.id} at step {self.steps_computed}')
         
         keep_comp = False
         for membrane in self.membranes:
@@ -134,8 +136,56 @@ class Membrane():
             ret.extend(membrane.get_all_membranes())
         return ret
     
-    def run(self, num_steps=1_00):
+    def proc_membranes(self, membranes, process_id, num_steps, barrier, iteration_counter, lock):
         for i in range(num_steps):
-            print(f'\n[{get_datetime()}] Computing step {i+1}...')
-            if not self.compute_step():
-                break
+            # synced = False
+            # while not synced:
+            #     with lock:
+            #         current_iteration = iteration_counter.value
+            #         if current_iteration == i:
+            #             synced = True
+            #     if not synced:
+            #         print(f'[!] Process-{process_id} waits...')
+            #         time.sleep(0.0000001)
+            
+            keep_comp = False
+            print(f'[!] Process-{process_id} performing step {i+1}...')
+            for membrane in membranes:
+                # print(f'[!] Process-{process_id} computing membrane {membrane.id}...')
+                aux = membrane.compute_step()
+                keep_comp = keep_comp or aux
+            print(f'[!] Process-{process_id} finished step {i+1}!')
+            
+            # barrier.wait()
+            # if process_id == 0:
+            #     print(f'[!] Process-{process_id} increasing counter...')
+            #     with lock:
+            #         iteration_counter.value += 1
+    
+    def run(self, num_steps=1_00, parallel=False):
+        if parallel:
+            n_proc = cpu_count()
+            barrier = Barrier(n_proc)
+            iteration_counter = Value('i', 0)
+            lock = Lock()
+            all_membranes = self.get_all_membranes()
+            mems_per_proc = int(len(all_membranes) / n_proc)
+            procs = []
+            
+            for i in range(n_proc):
+                procs.append(Process(target=self.proc_membranes, args=(all_membranes[i*mems_per_proc : (i+1)*mems_per_proc], 
+                                                                       i,
+                                                                       num_steps,
+                                                                       barrier,
+                                                                       iteration_counter,
+                                                                       lock)))
+            for p in procs:
+                p.start()
+            for p in procs:
+                p.join()
+
+        else:
+            for i in range(num_steps):
+                print(f'\n[{get_datetime()}] Computing step {i+1}...')
+                if not self.compute_step():
+                    break

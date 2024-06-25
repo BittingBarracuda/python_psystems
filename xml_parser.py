@@ -9,31 +9,21 @@ import constants as c
 
 FILES_DIR = 'files'
 
-def config_get_info(membrane_xml, membrane_obj, np_arr=False, alphabet=[]):
+def config_get_info(membrane_xml, membrane_obj):
     msets, membs = [], []
     for child in membrane_xml:
         if child.tag == 'BO':
             msets.append((child.attrib['v'], int(child.attrib['m'])))
         elif child.tag == 'membrane':
-            if np_arr:
-                aux_mem = Membrane(id=child.attrib['id'],
-                                parent=membrane_obj,
-                                mult_content=MultisetNp(''),
-                                mem_content=[],
-                                rules=[],
-                                alphabet=alphabet)
-            else:
-                aux_mem = Membrane(id=child.attrib['id'],
-                                parent=membrane_obj,
-                                mult_content=Multiset(''),
-                                mem_content=[],
-                                rules=[])
+            aux_mem = Membrane(id=child.attrib['id'],
+                            parent=membrane_obj,
+                            mult_content=Multiset(''),
+                            mem_content=[],
+                            rules=[])
             membs.append(aux_mem)
-            config_get_info(child, aux_mem, np_arr, alphabet)
-    if np_arr:
-        membrane_obj.set_multiset(MultisetNp(msets, alphabet))
-    else:
-        membrane_obj.set_multiset(Multiset(msets))
+            config_get_info(child, aux_mem)
+        
+    membrane_obj.set_multiset(Multiset(msets))
     membrane_obj.set_membranes(membs)
 
 def read_config(alphabet=[]):
@@ -45,7 +35,7 @@ def read_config(alphabet=[]):
                         mult_content=Multiset(''), 
                         mem_content=[],
                         rules=[])
-    config_get_info(root_mem_xml, root_mem, False, alphabet)
+    config_get_info(root_mem_xml, root_mem)
 
     return root_mem
 
@@ -59,7 +49,7 @@ def complete_alphabet(file, alphabet=[]):
         if value not in alphabet:
             alphabet.append(value)
 
-def rules_get_info(membrane_xml, np_arr=False, alphabet=[]):
+def rules_get_info(membrane_xml):
     rules = []
     aux = {}
     for child in membrane_xml:
@@ -90,20 +80,14 @@ def rules_get_info(membrane_xml, np_arr=False, alphabet=[]):
                 dest = 'here'
             pr = float(child.attrib['pr'])
 
-            if np_arr:
-                rule = Rule(lhs=MultisetNp(lhs_ms, alphabet),
-                            rhs=MultisetNp(rhs_ms, alphabet),
-                            dest=dest,
-                            priority=pr)
-            else:
-                rule = Rule(lhs=Multiset(lhs_ms), 
-                            rhs=Multiset(rhs_ms),
-                            dest=dest,
-                            priority=pr)
+            rule = Rule(lhs=Multiset(lhs_ms), 
+                        rhs=Multiset(rhs_ms),
+                        dest=dest,
+                        priority=pr)
             rules.append(rule)
         
         elif child.tag == 'membrane':
-            aux = aux | rules_get_info(child, np_arr, alphabet)
+            aux = aux | rules_get_info(child)
     try:
         rules = {membrane_xml.attrib['ID']: rules}
     except KeyError:
@@ -124,4 +108,4 @@ def read_rules():
     complete_alphabet('rules.xml', alphabet)
     complete_alphabet('config.xml', alphabet)
     root_mem_xml = tree.getroot()[1]
-    return rules_get_info(root_mem_xml, False, alphabet), alphabet
+    return rules_get_info(root_mem_xml), alphabet

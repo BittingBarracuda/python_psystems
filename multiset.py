@@ -84,31 +84,31 @@ class Multiset():
         return self.__str__()
 
 
-class MultisetNp():
-    def __init__(self, input=[], alphabet=[], np_arr=np.array([])):
-        if np_arr.size != 0:
-            self.arr = np_arr
-        else:
-            n = len(alphabet)
-            self.arr = np.zeros(shape=(1, n), dtype=int)
-            for key, value in input:
-                index = alphabet.index(key)
-                self.arr[0][index] = value
-            self.arr = sp.sparse.csr_array(self.arr)
-        # self.alphabet = alphabet
+# class MultisetNp():
+#     def __init__(self, input=[], alphabet=[], np_arr=np.array([])):
+#         if np_arr.size != 0:
+#             self.arr = np_arr
+#         else:
+#             n = len(alphabet)
+#             self.arr = np.zeros(shape=(1, n), dtype=int)
+#             for key, value in input:
+#                 index = alphabet.index(key)
+#                 self.arr[0][index] = value
+#             self.arr = sp.sparse.csr_array(self.arr)
+#         # self.alphabet = alphabet
     
-    def contains(self, other):
-        aux = self.arr - other.arr
-        return aux[aux < 0].size == 0
+#     def contains(self, other):
+#         aux = self.arr - other.arr
+#         return aux[aux < 0].size == 0
 
-    def __add__(self, other):
-        aux = self.arr + other.arr
-        return MultisetNp(np_arr=aux) 
+#     def __add__(self, other):
+#         aux = self.arr + other.arr
+#         return MultisetNp(np_arr=aux) 
     
-    def __sub__(self, other):
-        aux = self.arr - other.arr
-        aux[aux < 0] = 0
-        return MultisetNp(np_arr=aux)
+#     def __sub__(self, other):
+#         aux = self.arr - other.arr
+#         aux[aux < 0] = 0
+#         return MultisetNp(np_arr=aux)
     
-    def __len__(self):
-        return self.arr[self.arr > 0].size
+#     def __len__(self):
+#         return self.arr[self.arr > 0].size
