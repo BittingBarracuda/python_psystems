@@ -2,28 +2,14 @@ import numpy as np
 import scipy as sp
 
 class Multiset():
-    def __init__(self, input) -> None:
-        self.multiset = {}
-        if type(input) == str:
-            keys = list(input)
-            for key in keys:
-                self.multiset[key] = self.multiset.get(key, 0) + 1
-        elif type(input) == dict:
-            if any([type(x) != str for x in input.keys()]):
-                raise TypeError('Keys for dictionary should be strings!')
-            if any([type(x) != int for x in input.values()]):
-                raise TypeError('Values for dictionary should be integers!')
-            self.multiset = input
-            
-            to_del = []
-            for key in self.multiset.keys():
-                if self.multiset[key] == 0:
-                    to_del.append(key)
-            for key in to_del:
-                del self.multiset[key]  
-        elif type(input) == list:
-            for key, mult in input:
-                self.multiset[key] = self.multiset.get(key, 0) + mult
+    def __init__(self, input={}) -> None:
+        # self.multiset = {}
+        # if any([type(x) != str for x in input.keys()]):
+        #     raise TypeError('Keys for dictionary should be strings!')
+        # if any([type(x) != int for x in input.values()]):
+        #     raise TypeError('Values for dictionary should be integers!')
+        # self.multiset = input    
+        self.multiset = {x:y for x, y in input.items() if y != 0}
     
     def support(self):
         return self.multiset.keys()  
