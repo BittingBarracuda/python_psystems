@@ -1,13 +1,19 @@
 import xml.etree.ElementTree as etree
 from bs4 import BeautifulSoup
 from membrane import Membrane 
-from multiset import Multiset, MultisetNp
+from multiset import Multiset
 from rule import Rule
 import os
 
 import constants as c
 
 FILES_DIR = 'files'
+
+def tuple_list_to_dict(list):
+    aux = {}
+    for key, value in list:
+        aux[key] = aux.get(key, 0) + value
+    return aux
 
 def config_get_info(membrane_xml, membrane_obj):
     msets, membs = [], []
@@ -17,13 +23,13 @@ def config_get_info(membrane_xml, membrane_obj):
         elif child.tag == 'membrane':
             aux_mem = Membrane(id=child.attrib['id'],
                             parent=membrane_obj,
-                            mult_content=Multiset(''),
+                            mult_content=Multiset(),
                             mem_content=[],
                             rules=[])
             membs.append(aux_mem)
             config_get_info(child, aux_mem)
-        
-    membrane_obj.set_multiset(Multiset(msets))
+
+    membrane_obj.set_multiset(Multiset(tuple_list_to_dict(msets)))
     membrane_obj.set_membranes(membs)
 
 def read_config(alphabet=[]):
@@ -32,7 +38,7 @@ def read_config(alphabet=[]):
     
     root_mem = Membrane(id=root_mem_xml.attrib['id'], 
                         parent=None,
-                        mult_content=Multiset(''), 
+                        mult_content=Multiset(), 
                         mem_content=[],
                         rules=[])
     config_get_info(root_mem_xml, root_mem)
@@ -80,8 +86,8 @@ def rules_get_info(membrane_xml):
                 dest = 'here'
             pr = float(child.attrib['pr'])
 
-            rule = Rule(lhs=Multiset(lhs_ms), 
-                        rhs=Multiset(rhs_ms),
+            rule = Rule(lhs=Multiset(tuple_list_to_dict(lhs_ms)), 
+                        rhs=Multiset(tuple_list_to_dict(rhs_ms)),
                         dest=dest,
                         priority=pr)
             rules.append(rule)

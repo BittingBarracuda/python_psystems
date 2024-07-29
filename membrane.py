@@ -11,7 +11,7 @@ def get_datetime():
     return datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
 class Membrane():
-    def __init__(self, id, parent=None, mult_content=Multiset(''), mem_content=[], rules=[], alphabet=[]):
+    def __init__(self, id, parent=None, mult_content=Multiset(), mem_content=[], rules=[], alphabet=[]):
         if (type(mult_content) != Multiset):
             raise TypeError('Membrane contents should be instance of Multiset!')
         if any([type(mem) != Membrane for mem in mem_content]):
@@ -26,8 +26,8 @@ class Membrane():
         self.membranes = mem_content
         self.rules = sorted(rules, key=lambda x: x.priority, reverse=True)
 
-        self.new_multiset = Multiset('')
-        self.new_membranes = Multiset('')
+        self.new_multiset = Multiset()
+        self.new_membranes = Multiset()
 
         self.id = id
         self.membranes_ids = {}
@@ -97,7 +97,7 @@ class Membrane():
 
     def __dump_buffers(self):
         self.multiset = self.new_multiset
-        self.new_multiset = Multiset('')
+        self.new_multiset = Multiset()
     
     def compute_step(self):
         rules = self.__get_applicable_rules()
