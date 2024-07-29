@@ -1,8 +1,10 @@
-from multiprocessing import Process, cpu_count, Lock, current_process, Barrier, Value
+from threading import Thread, Lock
+from multiprocessing import cpu_count
 from datetime import datetime
 from multiset import Multiset
 from rule import Rule
 from random import choice
+from queue import Queue
 
 import constants as c
 import time
@@ -99,7 +101,7 @@ class Membrane():
         self.multiset = self.new_multiset
         self.new_multiset = Multiset()
     
-    def compute_step(self):
+    def compute_step(self, threaded=False, lock=None):
         rules = self.__get_applicable_rules()
         rule_blocks = self.__get_priority_blocks(rules)
         rule_blocks = [rule_blocks[prior] for prior in sorted(list(rule_blocks.keys()), reverse=True)]
@@ -107,16 +109,21 @@ class Membrane():
         for rule_block in rule_blocks:
             rule_to_apply = choice(rule_block)
             if self.__is_applicable(rule_to_apply):
-                self.__apply_rule(rule_to_apply)
-        
-        self.__dump_buffers()
+                if threaded:
+                    with lock:
+                        self.__apply_rule(rule_to_apply)
+                else:
+                    self.__apply_rule(rule_to_apply)
+            
         self.steps_computed += 1
         # print(f'[!] Contents of membrane {self.id} at step {self.steps_computed}')
         
         keep_comp = False
-        for membrane in self.membranes:
-            aux = membrane.compute_step()
-            keep_comp = keep_comp or aux
+        if not threaded:
+            self.__dump_buffers()
+            for membrane in self.membranes:
+                aux = membrane.compute_step()
+                keep_comp = keep_comp or aux
         
         keep_comp = keep_comp or (len(self.multiset) != 0)
         return keep_comp
@@ -136,54 +143,43 @@ class Membrane():
             ret.extend(membrane.get_all_membranes())
         return ret
     
-    def proc_membranes(self, membranes, process_id, num_steps, barrier, iteration_counter, lock):
-        for i in range(num_steps):
-            # synced = False
-            # while not synced:
-            #     with lock:
-            #         current_iteration = iteration_counter.value
-            #         if current_iteration == i:
-            #             synced = True
-            #     if not synced:
-            #         print(f'[!] Process-{process_id} waits...')
-            #         time.sleep(0.0000001)
-            
-            keep_comp = False
-            print(f'[!] Process-{process_id} performing step {i+1}...')
-            for membrane in membranes:
-                # print(f'[!] Process-{process_id} computing membrane {membrane.id}...')
-                aux = membrane.compute_step()
-                keep_comp = keep_comp or aux
-            print(f'[!] Process-{process_id} finished step {i+1}!')
-            
-            # barrier.wait()
-            # if process_id == 0:
-            #     print(f'[!] Process-{process_id} increasing counter...')
-            #     with lock:
-            #         iteration_counter.value += 1
+    def proc_membranes(self, q, lock, thread_id):
+        while True:
+            membrane = q.get()
+            # print(f'[! {get_datetime()} - Thread-{thread_id}] Processing membrane {membrane.id}')
+            _ = membrane.compute_step(threaded=True, lock=lock)
+            q.task_done()
     
     def run(self, num_steps=1_00, parallel=False):
         if parallel:
             n_proc = cpu_count()
-            barrier = Barrier(n_proc)
-            iteration_counter = Value('i', 0)
             lock = Lock()
             all_membranes = self.get_all_membranes()
-            mems_per_proc = int(len(all_membranes) / n_proc)
-            procs = []
             
-            for i in range(n_proc):
-                procs.append(Process(target=self.proc_membranes, args=(all_membranes[i*mems_per_proc : (i+1)*mems_per_proc], 
-                                                                       i,
-                                                                       num_steps,
-                                                                       barrier,
-                                                                       iteration_counter,
-                                                                       lock)))
-            for p in procs:
-                p.start()
-            for p in procs:
-                p.join()
+            for j in range(1, num_steps+1):
+                print(f'\n[! {get_datetime()}] Computing step {j}...')
 
+                print(f'[! {get_datetime()}] Creating queue...')
+                q = Queue()
+                for membrane in all_membranes:
+                    q.put(membrane)
+
+                print(f'[! {get_datetime()}] Threads computing membranes...')
+                threads = []
+                for i in range(n_proc):
+                    threads.append(Thread(target=self.proc_membranes, args=(q,
+                                                                           lock,
+                                                                           i)))
+                for t in threads:
+                    t.start()
+                q.join()
+                
+                print(f'[! {get_datetime()}] Checking if next step is possible...')
+                all_membranes = self.get_all_membranes()
+                for membrane in all_membranes:
+                    membrane.__dump_buffers()
+                if all([len(x.multiset) <= 0 for x in all_membranes]):
+                    break
         else:
             for i in range(num_steps):
                 print(f'\n[{get_datetime()}] Computing step {i+1}...')
