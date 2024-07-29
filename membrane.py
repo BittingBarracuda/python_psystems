@@ -1,13 +1,10 @@
-# from threading import Thread, Lock
 from multiprocessing import cpu_count, Process, Lock
 from datetime import datetime
 from multiset import Multiset
 from rule import Rule
 from random import choice
-# from queue import Queue
 
 import constants as c
-import time
 
 def get_datetime():
     return datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -143,10 +140,11 @@ class Membrane():
         return ret
     
 def proc_membranes(membranes, lock, proc_id):
-    print(f'[! {get_datetime()}] Process-{proc_id} starts!')
+    print(f'[! {get_datetime()}] Process-{proc_id} starts processing {len(membranes)} membranes!')
     for membrane in membranes:
         # print(f'[! {get_datetime()} - Process-{proc_id}] Processing membrane {membrane.id}')
         _ = membrane.compute_step(threaded=True, lock=lock)
+    print(f'[! {get_datetime()}] Process-{proc_id} finished processing {len(membranes)} membranes!')
     
 def run(root, num_steps=1_00, parallel=False):
     if parallel:
@@ -159,11 +157,16 @@ def run(root, num_steps=1_00, parallel=False):
             print(f'\n[! {get_datetime()}] Computing step {j}...')
 
             print(f'[! {get_datetime()}] Processes computing membranes...')
-            procs = []
-            for i in range(n_proc):
-                procs.append(Process(target=proc_membranes, args=(all_membranes[i * mems_per_proc : (i + 1) * mems_per_proc],
+            procs, n_mems = [], 0
+            for i in range(n_proc - 1):
+                aux = all_membranes[i * mems_per_proc : (i + 1) * mems_per_proc]
+                n_mems += len(aux)
+                procs.append(Process(target=proc_membranes, args=(aux,
                                                                   lock,
                                                                   i)))
+            procs.append(Process(target=proc_membranes, args=(all_membranes[n_mems:],
+                                                              lock,
+                                                              n_proc-1)))
             for p in procs:
                 p.start()
             for p in procs:
