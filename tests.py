@@ -22,7 +22,7 @@ def membranes_to_txt(membranes):
                 parent_id = membrane.parent.id
             else:
                 parent_id = ''
-            file.write(f'["membrane_id"="{membrane.id}","parent_id"="{parent_id}","contents"="[{contents}]", "rules"="[{rules_str}]"]\n')
+            file.write(f'membrane_id={membrane.id},parent_id={parent_id},contents=[{contents}], rules=[{rules_str}]\n')
 
 if __name__ == "__main__":
     print(f'[! {get_datetime()}] Starting computation...')
