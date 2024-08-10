@@ -92,11 +92,11 @@ class Membrane():
             if dest_mem != None:
                 dest_mem.new_multiset += rule.rhs
 
-    def dump_buffers(self):
+    def __dump_buffers(self):
         self.multiset += self.new_multiset
         self.new_multiset = Multiset()
     
-    def compute_step(self, threaded=False, lock=None):
+    def compute_step(self):
         rules = self.__get_applicable_rules()
         if rules != []:
             rule_blocks = self.__get_priority_blocks(rules)
@@ -105,21 +105,16 @@ class Membrane():
             for rule_block in rule_blocks:
                 rule_to_apply = choice(rule_block)
                 if self.__is_applicable(rule_to_apply):
-                    if threaded:
-                        with lock:
-                            self.__apply_rule(rule_to_apply)
-                    else:
-                        self.__apply_rule(rule_to_apply)
+                    self.__apply_rule(rule_to_apply)
             
         self.steps_computed += 1
+        self.__dump_buffers()
         # print(f'[!] Contents of membrane {self.id} at step {self.steps_computed}')
         
         keep_comp = False
-        if not threaded:
-            self.__dump_buffers()
-            for membrane in self.membranes:
-                aux = membrane.compute_step()
-                keep_comp = keep_comp or aux
+        for membrane in self.membranes:
+            aux = membrane.compute_step()
+            keep_comp = keep_comp or aux
         
         keep_comp = keep_comp or (len(self.multiset) != 0)
         return keep_comp
@@ -139,47 +134,8 @@ class Membrane():
             ret.extend(membrane.get_all_membranes())
         return ret
     
-def proc_membranes(membranes, lock, proc_id):
-    print(f'[! {get_datetime()}] Process-{proc_id} starts processing {len(membranes)} membranes!')
-    for membrane in membranes:
-        # print(f'[! {get_datetime()} - Process-{proc_id}] Processing membrane {membrane.id}')
-        _ = membrane.compute_step(threaded=True, lock=lock)
-    print(f'[! {get_datetime()}] Process-{proc_id} finished processing {len(membranes)} membranes!')
-    
-def run(root, num_steps=1_00, parallel=False):
-    if parallel:
-        n_proc = cpu_count() // 2
-        lock = Lock()
-        all_membranes = root.get_all_membranes()
-        mems_per_proc = len(all_membranes) // n_proc
-            
-        for j in range(1, num_steps+1):
-            print(f'\n[! {get_datetime()}] Computing step {j}...')
-
-            print(f'[! {get_datetime()}] Processes computing membranes...')
-            procs, n_mems = [], 0
-            for i in range(n_proc - 1):
-                aux = all_membranes[i * mems_per_proc : (i + 1) * mems_per_proc]
-                n_mems += len(aux)
-                procs.append(Process(target=proc_membranes, args=(aux,
-                                                                  lock,
-                                                                  i)))
-            procs.append(Process(target=proc_membranes, args=(all_membranes[n_mems:],
-                                                              lock,
-                                                              n_proc-1)))
-            for p in procs:
-                p.start()
-            for p in procs:
-                p.join()
-                
-            print(f'[! {get_datetime()}] Checking if next step is possible...')
-            all_membranes = root.get_all_membranes()
-            for membrane in all_membranes:
-                membrane.dump_buffers()
-            if all([len(x.multiset) <= 0 for x in all_membranes]):
-                break
-    else:
+    def run(self, num_steps=1_00):
         for i in range(num_steps):
             print(f'\n[{get_datetime()}] Computing step {i+1}...')
-            if not root.compute_step():
+            if not self.compute_step():
                 break
