@@ -1,7 +1,7 @@
 from xml_parser import read_config, read_rules
 from datetime import datetime
 from multiset import Multiset
-from membrane import Membrane, run
+from membrane import Membrane
 from rule import Rule
 from tqdm import tqdm
 import time
@@ -25,22 +25,21 @@ def membranes_to_txt(membranes):
             file.write(f'membrane_id={membrane.id},parent_id={parent_id},contents=[{contents}], rules=[{rules_str}]\n')
 
 if __name__ == "__main__":
-    print(f'[! {get_datetime()}] Starting computation...')
-    print(f'[! {get_datetime()}] Reading rules file...')
+    print(f'[{get_datetime()}] Starting computation...')
+    print(f'[{get_datetime()}] Reading rules file...')
     rules, alphabet = read_rules()
     
-    print(f'[! {get_datetime()}] Reading config file...')
+    print(f'[{get_datetime()}] Reading config file...')
     membrane_1 = read_config()
     
     membrane_1.set_rules(rules)
     all_membranes = membrane_1.get_all_membranes()
-    print(f'[! {get_datetime()}] System contains {len(all_membranes)} membranes!')
+    print(f'[{get_datetime()}] System contains {len(all_membranes)} membranes!')
     
-    print(f'[! {get_datetime()}] Writing membranes to txt file...')
-    membranes_to_txt(all_membranes)
-    # start_time = time.time()
-    # print(f'[! {get_datetime()}] Computing all steps...')
-    # run(membrane_1, num_steps=1_00, parallel=True)
-    # print(f'[! {get_datetime()}] Ending computation...')
-    # end_time = time.time()
-    # print(f'[! {get_datetime()}] Time elapsed: {end_time - start_time} seconds!')
+    print(f'[{get_datetime()}] Writing membranes to txt file...')
+    start_time = time.time()
+    print(f'[{get_datetime()}] Computing all steps...')
+    membrane_1.run(num_steps=1_00)
+    print(f'[{get_datetime()}] Ending computation...')
+    end_time = time.time()
+    print(f'[{get_datetime()}] Time elapsed: {end_time - start_time} seconds!')
