@@ -24,6 +24,7 @@ class Membrane():
         self.parent = parent
         self.membranes = mem_content
         self.rules = sorted(rules, key=lambda x: x.priority, reverse=True)
+        # self.rule_blocks = self.__get_priority_blocks(self.rules)
 
         self.new_multiset = Multiset()
         self.new_membranes = Multiset()
@@ -58,7 +59,8 @@ class Membrane():
         
         try:
             current_rules = rules[self.id]
-            self.rules = current_rules
+            self.rules = sorted(current_rules, key=lambda x: x.priority, reverse=True)
+            # self.rule_blocks = self.__get_priority_blocks(self.rules)
         except KeyError:
             pass
         
@@ -67,9 +69,14 @@ class Membrane():
                 mem.set_rules(rules)
     
     def __get_applicable_rules(self):
-        step_1 = [rule for rule in self.rules if self.multiset.contains(rule.lhs)]
-        step_2 = [rule for rule in step_1 if (rule.destination in c.DESTS) or (rule.destination in self.membranes_ids.keys())]
-        return step_2
+        step_1 = [rule for rule in self.rules if self.multiset.contains(rule.lhs) and ((rule.destination in c.DESTS) or (rule.destination in self.membranes_ids.keys()))]
+        return step_1
+        # ret = []
+        # for block in self.rule_blocks:
+        #     aux = [rule for rule in block if self.__is_applicable(rule)]
+        #     if aux != []:
+        #         ret.append(aux)
+        # return ret
 
     def __is_applicable(self, rule):
         return (self.multiset.contains(rule.lhs) and ((rule.destination in c.DESTS) or (rule.destination in self.membranes_ids.keys())))
@@ -78,6 +85,7 @@ class Membrane():
         ret = {}
         for rule in applicable_rules:
             ret[rule.priority] = ret.get(rule.priority, []) + [rule]
+        ret = [ret[prior] for prior in sorted(list(ret.keys()), reverse=True)]
         return ret
     
     def __apply_rule(self, rule):
@@ -99,16 +107,13 @@ class Membrane():
     def compute_step(self):
         rules = self.__get_applicable_rules()
         if rules != []:
-            rule_blocks = self.__get_priority_blocks(rules)
-            rule_blocks = [rule_blocks[prior] for prior in sorted(list(rule_blocks.keys()), reverse=True)]
-            
+            rule_blocks = self.__get_priority_blocks(rules)         
             for rule_block in rule_blocks:
                 rule_to_apply = choice(rule_block)
                 if self.__is_applicable(rule_to_apply):
                     self.__apply_rule(rule_to_apply)
             
         self.steps_computed += 1
-        self.__dump_buffers()
         # print(f'[!] Contents of membrane {self.id} at step {self.steps_computed}')
         
         keep_comp = False
@@ -116,6 +121,7 @@ class Membrane():
             aux = membrane.compute_step()
             keep_comp = keep_comp or aux
         
+        self.__dump_buffers()
         keep_comp = keep_comp or (len(self.multiset) != 0)
         return keep_comp
     
