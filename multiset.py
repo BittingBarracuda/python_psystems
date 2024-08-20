@@ -1,6 +1,3 @@
-import numpy as np
-import scipy as sp
-
 class Multiset():
     def __init__(self, input={}) -> None:
         # self.multiset = {}
@@ -39,16 +36,27 @@ class Multiset():
         # return all([other.multiset.get(key, 0) <= self.multiset.get(key, 0) for key in keys])
         
     def __add__(self, other):
-        if type(other) != Multiset:
-            raise TypeError('Multisets can only be sumed with other Multiset!')
-        keys = self.__get_all_keys(other)
-        return Multiset({key : (self.multiset.get(key, 0) + other.multiset.get(key, 0)) for key in keys}) 
+        ret = self.multiset.copy()
+        for key, value in other.multiset.items():
+            if key in ret:
+                ret[key] += value
+            else:
+                ret[key] = value
+        return Multiset(ret)
+        # if type(other) != Multiset:
+        #     raise TypeError('Multisets can only be sumed with other Multiset!')
+        # keys = self.__get_all_keys(other)
+        # return Multiset({key : (self.multiset.get(key, 0) + other.multiset.get(key, 0)) for key in keys}) 
     
     def __sub__(self, other):
-        if type(other) != Multiset:
-            raise TypeError('Multisets can only be substracted with other Multiset!')
-        keys = self.__get_all_keys(other)
-        return Multiset({key: max(self.multiset.get(key, 0) - other.multiset.get(key, 0), 0) for key in keys})
+        ret = self.multiset.copy()
+        for key, value in other.multiset.items():
+            ret[key] -= value
+        return Multiset(ret)
+        # if type(other) != Multiset:
+        #     raise TypeError('Multisets can only be substracted with other Multiset!')
+        # keys = self.__get_all_keys(other)
+        # return Multiset({key: max(self.multiset.get(key, 0) - other.multiset.get(key, 0), 0) for key in keys})
 
     def __mul__(self, other):
         if type(other) != int:
