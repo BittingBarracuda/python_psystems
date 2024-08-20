@@ -69,7 +69,7 @@ class Membrane():
                 mem.set_rules(rules)
     
     def __get_applicable_rules(self):
-        step_1 = [rule for rule in self.rules if self.multiset.contains(rule.lhs) and ((rule.destination in c.DESTS) or (rule.destination in self.membranes_ids.keys()))]
+        step_1 = [rule for rule in self.rules if self.__is_applicable(rule)]
         return step_1
         # ret = []
         # for block in self.rule_blocks:
@@ -82,10 +82,20 @@ class Membrane():
         return (self.multiset.contains(rule.lhs) and ((rule.destination in c.DESTS) or (rule.destination in self.membranes_ids.keys())))
     
     def __get_priority_blocks(self, applicable_rules=[]):
-        ret = {}
-        for rule in applicable_rules:
-            ret[rule.priority] = ret.get(rule.priority, []) + [rule]
-        ret = [ret[prior] for prior in sorted(list(ret.keys()), reverse=True)]
+        # ret = {}
+        # for rule in applicable_rules:
+        #     ret[rule.priority] = ret.get(rule.priority, []) + [rule]
+        # ret = [ret[prior] for prior in sorted(list(ret.keys()), reverse=True)]
+        ret = []
+        if applicable_rules != []:
+            current_pr = applicable_rules[0].priority
+            ret.append([applicable_rules[0]])
+            for i in range(1, len(applicable_rules)):
+                if applicable_rules[i].priority == current_pr:
+                    ret[-1].append(applicable_rules[i])
+                else:
+                    current_pr = applicable_rules[i].priority
+                    ret.append([applicable_rules[i]])
         return ret
     
     def __apply_rule(self, rule):
@@ -142,6 +152,6 @@ class Membrane():
     
     def run(self, num_steps=1_00):
         for i in range(num_steps):
-            print(f'\n[{get_datetime()}] Computing step {i+1}...')
+            print(f'[{get_datetime()}] Computing step {i+1}...')
             if not self.compute_step():
                 break
