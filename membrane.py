@@ -24,7 +24,7 @@ class Membrane():
         self.parent = parent
         self.membranes = mem_content
         self.rules = sorted(rules, key=lambda x: x.priority, reverse=True)
-        # self.rule_blocks = self.__get_priority_blocks(self.rules)
+        self.rule_blocks = self.__get_priority_blocks(self.rules)
 
         self.new_multiset = Multiset()
         self.new_membranes = Multiset()
@@ -60,7 +60,7 @@ class Membrane():
         try:
             current_rules = rules[self.id]
             self.rules = sorted(current_rules, key=lambda x: x.priority, reverse=True)
-            # self.rule_blocks = self.__get_priority_blocks(self.rules)
+            self.rule_blocks = self.__get_priority_blocks(self.rules)
         except KeyError:
             pass
         
@@ -68,24 +68,14 @@ class Membrane():
             for mem in mems:
                 mem.set_rules(rules)
     
-    def __get_applicable_rules(self):
-        step_1 = [rule for rule in self.rules if self.__is_applicable(rule)]
+    def __get_applicable_rules(self, step):
+        step_1 = [rule for rule in self.rule_blocks[step] if self.__is_applicable(rule)]
         return step_1
-        # ret = []
-        # for block in self.rule_blocks:
-        #     aux = [rule for rule in block if self.__is_applicable(rule)]
-        #     if aux != []:
-        #         ret.append(aux)
-        # return ret
 
     def __is_applicable(self, rule):
         return (self.multiset.contains(rule.lhs) and ((rule.destination in c.DESTS) or (rule.destination in self.membranes_ids.keys())))
     
     def __get_priority_blocks(self, applicable_rules=[]):
-        # ret = {}
-        # for rule in applicable_rules:
-        #     ret[rule.priority] = ret.get(rule.priority, []) + [rule]
-        # ret = [ret[prior] for prior in sorted(list(ret.keys()), reverse=True)]
         ret = []
         if applicable_rules != []:
             current_pr = applicable_rules[0].priority
@@ -99,29 +89,30 @@ class Membrane():
         return ret
     
     def __apply_rule(self, rule):
-        self.multiset -= rule.lhs
+        self.multiset.sub(rule.lhs)
         if rule.destination == c.DEST_HERE:
-            self.new_multiset += rule.rhs
+            self.new_multiset.add(rule.rhs)
         elif rule.destination == c.DEST_OUT:
             if self.parent != None:
-                self.parent.new_multiset += rule.rhs
+                self.parent.new_multiset.add(rule.rhs)
         else:
             dest_mem = self.membranes_ids.get(rule.destination, None)
             if dest_mem != None:
-                dest_mem.new_multiset += rule.rhs
+                dest_mem.new_multiset.add(rule.rhs)
 
     def __dump_buffers(self):
-        self.multiset += self.new_multiset
+        self.multiset.add(self.new_multiset)
         self.new_multiset = Multiset()
     
     def compute_step(self):
-        rules = self.__get_applicable_rules()
-        if rules != []:
-            rule_blocks = self.__get_priority_blocks(rules)         
-            for rule_block in rule_blocks:
-                rule_to_apply = choice(rule_block)
-                if self.__is_applicable(rule_to_apply):
-                    self.__apply_rule(rule_to_apply)
+        n = len(self.rule_blocks)
+        if n > 0:
+            for i in range(n):
+                rules = self.__get_applicable_rules(i)
+                if rules != []:
+                    rule_to_apply = choice(rules)
+                    if self.__is_applicable(rule_to_apply):
+                        self.__apply_rule(rule_to_apply)
             
         self.steps_computed += 1
         # print(f'[!] Contents of membrane {self.id} at step {self.steps_computed}')
