@@ -14,3 +14,9 @@ class Rule():
         self.rhs = rhs
         self.destination = dest
         self.priority = priority
+    
+    def __str__(self):
+        return f'{self.lhs.__str__()} ---> {self.rhs.__str__()} - (dest:{self.destination}, pr:{self.priority})'
+    
+    def __repr__(self):
+        return self.__str__()
