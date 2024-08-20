@@ -1,11 +1,5 @@
 class Multiset():
-    def __init__(self, input={}) -> None:
-        # self.multiset = {}
-        # if any([type(x) != str for x in input.keys()]):
-        #     raise TypeError('Keys for dictionary should be strings!')
-        # if any([type(x) != int for x in input.values()]):
-        #     raise TypeError('Values for dictionary should be integers!')
-        # self.multiset = input    
+    def __init__(self, input={}) -> None: 
         self.multiset = {x:y for x, y in input.items() if y != 0}
     
     def support(self):
@@ -22,6 +16,8 @@ class Multiset():
     
     def contains(self, other):
         try:
+            # if not (set(other.multiset.keys()) <= set(self.multiset.keys())):
+            #     return False
             for key, value in other.multiset.items():
                 val_self =  self.multiset[key]
                 if val_self < value:
@@ -29,11 +25,6 @@ class Multiset():
         except KeyError:
             return False
         return True
-        # if type(other) != Multiset:
-        #     raise TypeError('Contains operation can only be applied between Multisets!')
-        # keys = self.__get_all_keys(other)
-        # keys = list(other.multiset.keys())
-        # return all([other.multiset.get(key, 0) <= self.multiset.get(key, 0) for key in keys])
         
     def __add__(self, other):
         ret = self.multiset.copy()
@@ -43,20 +34,23 @@ class Multiset():
             else:
                 ret[key] = value
         return Multiset(ret)
-        # if type(other) != Multiset:
-        #     raise TypeError('Multisets can only be sumed with other Multiset!')
-        # keys = self.__get_all_keys(other)
-        # return Multiset({key : (self.multiset.get(key, 0) + other.multiset.get(key, 0)) for key in keys}) 
+
+    def add(self, other):
+        for key, value in other.multiset.items():
+            if key in self.multiset:
+                self.multiset[key] += value 
+            else:
+                self.multiset[key] = value
     
     def __sub__(self, other):
         ret = self.multiset.copy()
         for key, value in other.multiset.items():
             ret[key] -= value
         return Multiset(ret)
-        # if type(other) != Multiset:
-        #     raise TypeError('Multisets can only be substracted with other Multiset!')
-        # keys = self.__get_all_keys(other)
-        # return Multiset({key: max(self.multiset.get(key, 0) - other.multiset.get(key, 0), 0) for key in keys})
+
+    def sub(self, other):
+        for key, value in other.multiset.items():
+            self.multiset[key] -= value
 
     def __mul__(self, other):
         if type(other) != int:
