@@ -69,6 +69,9 @@ class Multiset():
     def __repr__(self):
         return self.__str__()
 
+    def items(self):
+        return self.multiset.items()
+
 
 # class MultisetNp():
 #     def __init__(self, input=[], alphabet=[], np_arr=np.array([])):
