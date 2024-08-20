@@ -24,11 +24,19 @@ class Multiset():
         return set(list(self.multiset.keys()) + list(other.multiset.keys()))
     
     def contains(self, other):
-        if type(other) != Multiset:
-            raise TypeError('Contains operation can only be applied between Multisets!')
+        try:
+            for key, value in other.multiset.items():
+                val_self =  self.multiset[key]
+                if val_self < value:
+                    return False
+        except KeyError:
+            return False
+        return True
+        # if type(other) != Multiset:
+        #     raise TypeError('Contains operation can only be applied between Multisets!')
         # keys = self.__get_all_keys(other)
-        keys = list(other.multiset.keys())
-        return all([other.multiset.get(key, 0) <= self.multiset.get(key, 0) for key in keys])
+        # keys = list(other.multiset.keys())
+        # return all([other.multiset.get(key, 0) <= self.multiset.get(key, 0) for key in keys])
         
     def __add__(self, other):
         if type(other) != Multiset:
