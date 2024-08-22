@@ -183,10 +183,12 @@ class Membrane():
     
     def __algorithm_1(self):
         n = len(self.rule_blocks)
+        keep = False
         if n > 0:
             for i in range(n):
                 curr_rules = self.__get_applicable_rules(i) # Obtenemos el bloque i de los bloques de reglas ordenados por prioridad
                 if curr_rules != []:
+                    keep = True
                     rule_blocks_lhs = self.__filter_shared_lhs(curr_rules, i) # Dentro del bloque i, subdividimos de nuevo en bloques de reglas que tienen algún elemento común en su LHS
                     for rule_block_lhs in rule_blocks_lhs: # Recorremos los sub-bloques generados
                         for rule in rule_block_lhs: # Recorremos cada regla del bloque
@@ -207,13 +209,16 @@ class Membrane():
                                             priority=rule.priority,
                                             pb=rule.pb)
                             self.__apply_rule(aux_rule)
+        return keep
 
     def __algorithm_2(self):
         n = len(self.rule_blocks)
+        keep = False
         if n > 0:
             for i in range(n):
                 curr_rules = self.__get_applicable_rules(i)
                 if curr_rules != []:
+                    keep = True
                     rule_blocks_lhs = self.__filter_shared_lhs(curr_rules, i)
                     for rule_block_lhs in rule_blocks_lhs:
                         subint = [0.0]
@@ -225,30 +230,32 @@ class Membrane():
                             if (rand >= subint[j - 1]) and (rand < subint[j]):
                                 self.__apply_rule(rule_block_lhs[j - 1])
                                 break
+        return keep
     
     def __random_algorithm(self):
         n = len(self.rule_blocks)
+        keep = False
         if n > 0:
             for i in range(n):
                 rules = self.__get_applicable_rules(i)
                 if rules != []:
+                    keep = True
                     rule_to_apply = choice(rules)
                     if self.__is_applicable(rule_to_apply):
                         self.__apply_rule(rule_to_apply)
+        return keep
         
     def compute_step(self):
-        # self.__random_algorithm()
-        self.__algorithm_1()
-        # self.__algorithm_2()
+        # keep_comp = self.__random_algorithm()
+        keep_comp = self.__algorithm_1()
+        # keep_comp = self.__algorithm_2()
             
         self.steps_computed += 1 
-        keep_comp = False
         for membrane in self.membranes:
             aux = membrane.compute_step()
             keep_comp = keep_comp or aux
         
         self.__dump_buffers()
-        keep_comp = keep_comp or (len(self.multiset) != 0)
         return keep_comp
     
     def degree(self):
