@@ -199,8 +199,14 @@ class Membrane():
                             
                             n_exec = min(execs)
                             n_exec = self.__get_execs(n_exec) # Calculamos el número verdadero de ejecuciones en caso de que n_exec sea un número no entero
-                            for _ in range(n_exec):
-                                self.__apply_rule(rule) # Aplicamos la regla n_exec veces
+                            # for _ in range(n_exec):
+                            #     self.__apply_rule(rule) # Aplicamos la regla n_exec veces
+                            aux_rule = Rule(lhs=rule.lhs*n_exec,
+                                            rhs=rule.rhs*n_exec,
+                                            dest=rule.destination,
+                                            priority=rule.priority,
+                                            pb=rule.pb)
+                            self.__apply_rule(aux_rule)
 
     def __algorithm_2(self):
         n = len(self.rule_blocks)
@@ -219,17 +225,20 @@ class Membrane():
                             if (rand >= subint[j - 1]) and (rand < subint[j]):
                                 self.__apply_rule(rule_block_lhs[j - 1])
     
+    def __random_algorithm(self):
+        n = len(self.rule_blocks)
+        if n > 0:
+            for i in range(n):
+                rules = self.__get_applicable_rules(i)
+                if rules != []:
+                    rule_to_apply = choice(rules)
+                    if self.__is_applicable(rule_to_apply):
+                        self.__apply_rule(rule_to_apply)
+        
     def compute_step(self):
-        # n = len(self.rule_blocks)
-        # if n > 0:
-        #     for i in range(n):
-        #         rules = self.__get_applicable_rules(i)
-        #         if rules != []:
-        #             rule_to_apply = choice(rules)
-        #             if self.__is_applicable(rule_to_apply):
-        #                 self.__apply_rule(rule_to_apply)
-        # self.__algorithm_1()
-        self.__algorithm_2()
+        # self.__random_algorithm()
+        self.__algorithm_1()
+        # self.__algorithm_2()
             
         self.steps_computed += 1 
         keep_comp = False
