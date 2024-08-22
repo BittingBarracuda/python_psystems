@@ -2,7 +2,7 @@ from multiprocessing import cpu_count, Process, Lock
 from datetime import datetime
 from multiset import Multiset
 from rule import Rule
-from random import choice
+from random import choice, random
 
 import constants as c
 
@@ -104,6 +104,62 @@ class Membrane():
         self.multiset.add(self.new_multiset)
         self.new_multiset = Multiset()
     
+    def __shared_lhs(self, rules):
+        shared_lhs_blocks = []
+        if rules != []:
+            shared_lhs_blocks = [[rules[0]]]
+            for i in range(1, len(rules)):
+                create_new = True
+                for block in shared_lhs_blocks:
+                    for rule in block:
+                        if Multiset.have_common_elems(rules[i].lhs, rule.lhs):
+                            block.append(rules[i])
+                            create_new = False
+                            break
+                    if not create_new:
+                        break
+                if create_new:
+                    shared_lhs_blocks.append([rules[i]])
+            
+            i, n = 0, len(shared_lhs_blocks)
+            while i < n:
+                j = i + 1
+                any_removed = False
+                while j < n:
+                    removed = False
+                    for rule_1 in shared_lhs_blocks[i]:
+                        for rule_2 in shared_lhs_blocks[j]:
+                            if Multiset.have_common_elems(rule_1.lhs, rule_2.lhs):
+                                shared_lhs_blocks[i].extend(shared_lhs_blocks[j])
+                                shared_lhs_blocks.remove(shared_lhs_blocks[j])
+                                removed, any_removed = True, True
+                                break
+                        if removed:
+                            break
+                    n = len(shared_lhs_blocks)
+                    if not removed:
+                        j = j + 1
+                if not any_removed:
+                    i = i + 1
+
+        return shared_lhs_blocks
+
+    def __shared_elem(self, rules, elem):
+        shared_elems = []
+        for rule in rules:
+            if elem in rule.lhs:
+                shared_elems.append(rule)
+        return rule   
+    
+    def __get_execs(k):
+        rand = random()
+        ke = int(k)
+        d = k - ke
+        if rand <= d:
+            return ke + 1
+        else:
+            return ke
+
     def compute_step(self):
         n = len(self.rule_blocks)
         if n > 0:
