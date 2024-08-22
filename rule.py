@@ -2,7 +2,7 @@ from multiset import Multiset
 from constants import DESTS
 
 class Rule():
-    def __init__(self, lhs, rhs, dest='here', priority=1.0):
+    def __init__(self, lhs, rhs, dest='here', priority=1.0, pb=1.0):
         if not ((type(lhs) == Multiset) and (type(rhs) == Multiset)):
             raise TypeError('Both left-hand side and right-hand side should be an instance of Multiset!')
         if (type(priority) != float):
@@ -14,9 +14,10 @@ class Rule():
         self.rhs = rhs
         self.destination = dest
         self.priority = priority
+        self.pb = pb
     
     def __str__(self):
-        return f'{self.lhs.__str__()} ---> {self.rhs.__str__()} - (dest:{self.destination}, pr:{self.priority})'
+        return f'{self.lhs.__str__()} ---> {self.rhs.__str__()} - (dest:{self.destination}, pr:{self.priority}, pb:{self.pb})'
     
     def __repr__(self):
         return self.__str__()
