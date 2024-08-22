@@ -25,6 +25,11 @@ class Membrane():
         self.membranes = mem_content
         self.rules = sorted(rules, key=lambda x: x.priority, reverse=True)
         self.rule_blocks = self.__get_priority_blocks(self.rules)
+        aux = []
+        for rule_block in self.rule_blocks:
+            aux.append([])
+            aux[-1] = self.__shared_lhs(rule_block)
+        self.rule_blocks_lhs = aux
 
         self.new_multiset = Multiset()
         self.new_membranes = Multiset()
@@ -61,6 +66,11 @@ class Membrane():
             current_rules = rules[self.id]
             self.rules = sorted(current_rules, key=lambda x: x.priority, reverse=True)
             self.rule_blocks = self.__get_priority_blocks(self.rules)
+            aux = []
+            for rule_block in self.rule_blocks:
+                aux.append([])
+                aux[-1] = self.__shared_lhs(rule_block)
+            self.rule_blocks_lhs = aux
         except KeyError:
             pass
         
@@ -149,9 +159,9 @@ class Membrane():
         for rule in rules:
             if elem in rule.lhs:
                 shared_elems.append(rule)
-        return rule   
+        return shared_elems  
     
-    def __get_execs(k):
+    def __get_execs(self, k):
         rand = random()
         ke = int(k)
         d = k - ke
@@ -159,20 +169,58 @@ class Membrane():
             return ke + 1
         else:
             return ke
-
-    def compute_step(self):
+    
+    def __algorithm_1(self):
         n = len(self.rule_blocks)
         if n > 0:
             for i in range(n):
-                rules = self.__get_applicable_rules(i)
-                if rules != []:
-                    rule_to_apply = choice(rules)
-                    if self.__is_applicable(rule_to_apply):
-                        self.__apply_rule(rule_to_apply)
+                curr_rules = self.__get_applicable_rules(i) # Obtenemos el bloque i de los bloques de reglas ordenados por prioridad
+                if curr_rules != []:
+                    rule_blocks_lhs = self.__shared_lhs(curr_rules) # Dentro del bloque i, subdividimos de nuevo en bloques de reglas que tienen algún elemento común en su LHS
+                    for rule_block_lhs in rule_blocks_lhs: # Recorremos los sub-bloques generados
+                        for rule in rule_block_lhs: # Recorremos cada regla del bloque
+                            execs = []
+                            for elem in rule.lhs.multiset: # Recorremos los elementos de la lhs de la regla actual
+                                mult_mem = self.multiset[elem] # Multiplicidad en la membrana actual de elem
+                                mult_lhs = rule.lhs[elem] # Multiplicidad en la lhs de la regla actual de elem
+                                num_rules = len(self.__shared_elem(rule_block_lhs, elem)) # Número de reglas del bloque actual en las que aparece elem
+                                execs.append((mult_mem * rule.pb) / (mult_lhs * num_rules)) # Calculamos el número de aplicaciones de la regla
+                            
+                            n_exec = min(execs)
+                            n_exec = self.__get_execs(n_exec) # Calculamos el número verdadero de ejecuciones en caso de que n_exec sea un número no entero
+                            for _ in range(n_exec):
+                                self.__apply_rule(rule) # Aplicamos la regla n_exec veces
+
+    def __algorithm_2(self):
+        n = len(self.rule_blocks)
+        if n > 0:
+            for i in range(n):
+                curr_rules = self.__get_applicable_rules(i)
+                if curr_rules != []:
+                    rule_blocks_lhs = self.__shared_lhs(curr_rules)
+                    for rule_block_lhs in rule_blocks_lhs:
+                        subint = [0.0]
+                        sum_rule_block = sum([rule.pb for rule in rule_block_lhs])
+                        for rule in rule_block_lhs:
+                            subint.append(subint[-1] + (rule.pb / sum_rule_block))
+                        rand = random()
+                        for j in range(1, len(subint)):
+                            if (rand >= subint[j - 1]) and (rand < subint[j]):
+                                self.__apply_rule(rule_block_lhs[j - 1])
+    
+    def compute_step(self):
+        # n = len(self.rule_blocks)
+        # if n > 0:
+        #     for i in range(n):
+        #         rules = self.__get_applicable_rules(i)
+        #         if rules != []:
+        #             rule_to_apply = choice(rules)
+        #             if self.__is_applicable(rule_to_apply):
+        #                 self.__apply_rule(rule_to_apply)
+        # self.__algorithm_1()
+        self.__algorithm_2()
             
-        self.steps_computed += 1
-        # print(f'[!] Contents of membrane {self.id} at step {self.steps_computed}')
-        
+        self.steps_computed += 1 
         keep_comp = False
         for membrane in self.membranes:
             aux = membrane.compute_step()
