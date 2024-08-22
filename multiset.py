@@ -51,6 +51,7 @@ class Multiset():
     def sub(self, other):
         for key, value in other.multiset.items():
             self.multiset[key] -= value
+        self.multiset = {x:y for x,y in self.multiset.items() if y != 0}
 
     def __mul__(self, other):
         if type(other) != int:
