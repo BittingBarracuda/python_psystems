@@ -81,6 +81,10 @@ class Multiset():
 
     def items(self):
         return self.multiset.items()
+    
+    @staticmethod
+    def have_common_elems(ms_1, ms_2):
+        return bool(set(ms_1) & set(ms_2))
 
 
 # class MultisetNp():
