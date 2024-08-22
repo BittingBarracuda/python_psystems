@@ -85,11 +85,13 @@ def rules_get_info(membrane_xml):
             else:
                 dest = 'here'
             pr = float(child.attrib['pr'])
+            pb = float(child.attrib['pb'])
 
             rule = Rule(lhs=Multiset(tuple_list_to_dict(lhs_ms)), 
                         rhs=Multiset(tuple_list_to_dict(rhs_ms)),
                         dest=dest,
-                        priority=pr)
+                        priority=pr,
+                        pb=pb)
             rules.append(rule)
         
         elif child.tag == 'membrane':
