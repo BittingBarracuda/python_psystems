@@ -114,6 +114,17 @@ class Membrane():
         self.multiset.add(self.new_multiset)
         self.new_multiset = Multiset()
     
+    def __filter_shared_lhs(self, rules, i):
+        ret = []
+        rule_block_lhs = self.rule_blocks_lhs[i]
+        for rule_block in rule_block_lhs:
+            ret.append([])
+            for rule in rule_block:
+                if rule in rules:
+                    ret[-1].append(rule)
+        ret = [x for x in ret if x != []]
+        return ret
+    
     def __shared_lhs(self, rules):
         shared_lhs_blocks = []
         if rules != []:
@@ -176,7 +187,7 @@ class Membrane():
             for i in range(n):
                 curr_rules = self.__get_applicable_rules(i) # Obtenemos el bloque i de los bloques de reglas ordenados por prioridad
                 if curr_rules != []:
-                    rule_blocks_lhs = self.__shared_lhs(curr_rules) # Dentro del bloque i, subdividimos de nuevo en bloques de reglas que tienen algún elemento común en su LHS
+                    rule_blocks_lhs = self.__filter_shared_lhs(curr_rules, i) # Dentro del bloque i, subdividimos de nuevo en bloques de reglas que tienen algún elemento común en su LHS
                     for rule_block_lhs in rule_blocks_lhs: # Recorremos los sub-bloques generados
                         for rule in rule_block_lhs: # Recorremos cada regla del bloque
                             execs = []
@@ -197,7 +208,7 @@ class Membrane():
             for i in range(n):
                 curr_rules = self.__get_applicable_rules(i)
                 if curr_rules != []:
-                    rule_blocks_lhs = self.__shared_lhs(curr_rules)
+                    rule_blocks_lhs = self.__filter_shared_lhs(curr_rules, i)
                     for rule_block_lhs in rule_blocks_lhs:
                         subint = [0.0]
                         sum_rule_block = sum([rule.pb for rule in rule_block_lhs])
