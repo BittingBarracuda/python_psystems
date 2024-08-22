@@ -224,6 +224,7 @@ class Membrane():
                         for j in range(1, len(subint)):
                             if (rand >= subint[j - 1]) and (rand < subint[j]):
                                 self.__apply_rule(rule_block_lhs[j - 1])
+                                break
     
     def __random_algorithm(self):
         n = len(self.rule_blocks)
