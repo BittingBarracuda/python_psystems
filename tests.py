@@ -33,7 +33,7 @@ def run_with_cprofile(membrane_1):
     # prof.sort_stats('cumtime')
     prof.dump_stats('output.prof')
 
-    stream = open('output_1.txt', 'w')
+    stream = open('output_3.txt', 'w')
     stats = pstats.Stats('output.prof', stream=stream)
     stats.sort_stats('cumtime')
     stats.print_stats()
