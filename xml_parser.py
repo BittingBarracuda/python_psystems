@@ -32,8 +32,8 @@ def config_get_info(membrane_xml, membrane_obj):
     membrane_obj.set_multiset(Multiset(tuple_list_to_dict(msets)))
     membrane_obj.set_membranes(membs)
 
-def read_config(alphabet=[]):
-    tree = etree.parse(os.path.join(FILES_DIR, 'config.xml'))
+def read_config(file_name, alphabet=[]):
+    tree = etree.parse(os.path.join(FILES_DIR, file_name))
     root_mem_xml = tree.getroot()[0][0]
     
     root_mem = Membrane(id=root_mem_xml.attrib['id'], 
@@ -104,8 +104,8 @@ def rules_get_info(membrane_xml):
     return (rules | aux)
 
 
-def read_rules():
-    tree = etree.parse(os.path.join(FILES_DIR, 'rules.xml'))
+def read_rules(file_name):
+    tree = etree.parse(os.path.join(FILES_DIR, file_name))
     
     alphabet = []
     root_alphabet = tree.getroot()[0]
