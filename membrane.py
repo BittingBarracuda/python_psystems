@@ -82,12 +82,11 @@ class Membrane():
         self.strings_to_track = to_track
     
     def set_membranes_to_track(self, to_track=[]):
-        self.membranes_to_track = to_track
+        self.membranes_to_track = [x for x in self.get_all_membranes() if x.id in to_track]
     
     def __track_objects(self):
-        # ret = {x:0 for x in self.strings_to_track} 
         ret = {}
-        for mem in [x for x in self.get_all_membranes() if x.id in self.membranes_to_track]:
+        for mem in self.membranes_to_track:
             rec = mem.get_all_membranes()
             for aux_mem in rec:
                 for obj in self.strings_to_track:
@@ -280,11 +279,10 @@ class Membrane():
         # keep_comp = self.__algorithm_2()
             
         self.steps_computed += 1 
-        for membrane in self.membranes:
-            aux = membrane.compute_step()
-            keep_comp = keep_comp or aux
-        
-        self.__dump_buffers()
+        # for membrane in self.membranes:
+        #     aux = membrane.compute_step()
+        #     keep_comp = keep_comp or aux
+        # self.__dump_buffers()
         return keep_comp
     
     def degree(self):
@@ -306,10 +304,14 @@ class Membrane():
         ret = []
         for i in range(num_steps):
             print(f'[{get_datetime()}] Computing step {i+1}...')
-            if not self.compute_step():
+            keep = []
+            for mem in self.get_all_membranes():
+                keep.append(mem.compute_step())
+            for mem in self.get_all_membranes():
+                mem.__dump_buffers()   
+            ret.append(self.__track_objects())
+            if not any(keep):
                 break
-            else:
-                ret.append(self.__track_objects())
-        ret.append(self.__track_objects())
+        # ret.append(self.__track_objects())
         return ret
 
