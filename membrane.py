@@ -78,12 +78,31 @@ class Membrane():
             for mem in mems:
                 mem.set_rules(rules)
     
+    def set_objects_to_track(self, to_track=[]):
+        self.strings_to_track = to_track
+    
+    def set_membranes_to_track(self, to_track=[]):
+        self.membranes_to_track = to_track
+    
+    def __track_objects(self):
+        # ret = {x:0 for x in self.strings_to_track} 
+        ret = {}
+        for mem in [x for x in self.get_all_membranes() if x.id in self.membranes_to_track]:
+            rec = mem.get_all_membranes()
+            for aux_mem in rec:
+                for obj in self.strings_to_track:
+                    ret[f'<{obj}-{mem.id}>'] = ret.get(f'<{obj}-{mem.id}>', 0) + aux_mem.multiset.multiset.get(obj, 0)
+        return ret
+
     def __get_applicable_rules(self, step):
         step_1 = [rule for rule in self.rule_blocks[step] if self.__is_applicable(rule)]
         return step_1
 
     def __is_applicable(self, rule):
-        return (self.multiset.contains(rule.lhs) and ((rule.destination in c.DESTS) or (rule.destination in self.membranes_ids.keys())))
+        aux = False
+        if self.parent != None:
+            aux = (rule.destination in self.parent.membranes_ids.keys())
+        return self.multiset.contains(rule.lhs) and ((rule.destination in c.DESTS) or (rule.destination in self.membranes_ids.keys()) or aux)
     
     def __get_priority_blocks(self, applicable_rules=[]):
         ret = []
@@ -109,6 +128,10 @@ class Membrane():
             dest_mem = self.membranes_ids.get(rule.destination, None)
             if dest_mem != None:
                 dest_mem.new_multiset.add(rule.rhs)
+            if self.parent != None:
+                dest_mem = self.parent.membranes_ids.get(rule.destination, None)[0]
+                if dest_mem != None:
+                    dest_mem.new_multiset.add(rule.rhs)
 
     def __dump_buffers(self):
         self.multiset.add(self.new_multiset)
@@ -194,7 +217,7 @@ class Membrane():
                         for rule in rule_block_lhs: # Recorremos cada regla del bloque
                             execs = []
                             for elem in rule.lhs.multiset: # Recorremos los elementos de la lhs de la regla actual
-                                mult_mem = self.multiset[elem] # Multiplicidad en la membrana actual de elem
+                                mult_mem = self.multiset.multiset.get(elem, 0) # Multiplicidad en la membrana actual de elem
                                 mult_lhs = rule.lhs[elem] # Multiplicidad en la lhs de la regla actual de elem
                                 num_rules = len(self.__shared_elem(rule_block_lhs, elem)) # Número de reglas del bloque actual en las que aparece elem
                                 execs.append((mult_mem * rule.pb) / (mult_lhs * num_rules)) # Calculamos el número de aplicaciones de la regla
@@ -203,12 +226,18 @@ class Membrane():
                             n_exec = self.__get_execs(n_exec) # Calculamos el número verdadero de ejecuciones en caso de que n_exec sea un número no entero
                             # for _ in range(n_exec):
                             #     self.__apply_rule(rule) # Aplicamos la regla n_exec veces
-                            aux_rule = Rule(lhs=rule.lhs*n_exec,
-                                            rhs=rule.rhs*n_exec,
-                                            dest=rule.destination,
-                                            priority=rule.priority,
-                                            pb=rule.pb)
-                            self.__apply_rule(aux_rule)
+                            # if rule.destination != 'here':
+                            #     print(f'RULE {rule} - n_execs {n_exec}')
+                            #     if n_exec == 0:
+                            #         print(execs)
+                            #         print('lol')
+                            if n_exec > 0:
+                                aux_rule = Rule(lhs=rule.lhs*n_exec,
+                                                rhs=rule.rhs*n_exec,
+                                                dest=rule.destination,
+                                                priority=rule.priority,
+                                                pb=rule.pb)
+                                self.__apply_rule(aux_rule)
         return keep
 
     def __algorithm_2(self):
@@ -274,7 +303,13 @@ class Membrane():
         return ret
     
     def run(self, num_steps=1_00):
+        ret = []
         for i in range(num_steps):
             print(f'[{get_datetime()}] Computing step {i+1}...')
             if not self.compute_step():
                 break
+            else:
+                ret.append(self.__track_objects())
+        ret.append(self.__track_objects())
+        return ret
+
